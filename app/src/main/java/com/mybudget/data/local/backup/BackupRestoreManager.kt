@@ -6,15 +6,41 @@ import com.mybudget.data.local.dao.TransactionDao
 import com.mybudget.data.local.entity.TransactionEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import java.security.SecureRandom
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 class BackupRestoreManager(
     private val context: Context,
     private val transactionDao: TransactionDao
 ) {
+    private val secretKey = SecretKeySpec("MyBudgetV1SecretKeyForJSONBckp!!".toByteArray(Charsets.UTF_8), "AES")
+
+    private fun encrypt(data: String): String {
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        val iv = ByteArray(12)
+        SecureRandom().nextBytes(iv)
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, GCMParameterSpec(128, iv))
+        val encrypted = cipher.doFinal(data.toByteArray(Charsets.UTF_8))
+        val ivAndEncrypted = iv + encrypted
+        return Base64.encodeToString(ivAndEncrypted, Base64.NO_WRAP)
+    }
+
+    private fun decrypt(base64Data: String): String {
+        val ivAndEncrypted = Base64.decode(base64Data, Base64.NO_WRAP)
+        val iv = ivAndEncrypted.copyOfRange(0, 12)
+        val encrypted = ivAndEncrypted.copyOfRange(12, ivAndEncrypted.size)
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(128, iv))
+        val decrypted = cipher.doFinal(encrypted)
+        return String(decrypted, Charsets.UTF_8)
+    }
     suspend fun exportData(uri: Uri, transactions: List<TransactionEntity>): Boolean = withContext(Dispatchers.IO) {
         try {
             val jsonArray = JSONArray()
@@ -31,9 +57,12 @@ class BackupRestoreManager(
                 jsonArray.put(jsonObj)
             }
 
+            val jsonString = jsonArray.toString(4)
+            val encryptedData = encrypt(jsonString)
+
             context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                 OutputStreamWriter(outputStream).use { writer ->
-                    writer.write(jsonArray.toString(4))
+                    writer.write(encryptedData)
                 }
             }
             true
@@ -45,12 +74,13 @@ class BackupRestoreManager(
 
     suspend fun importData(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         try {
-            val jsonString = context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            val encryptedString = context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 InputStreamReader(inputStream).use { reader ->
                     reader.readText()
                 }
             } ?: return@withContext false
 
+            val jsonString = decrypt(encryptedString)
             val jsonArray = JSONArray(jsonString)
             val newTransactions = mutableListOf<TransactionEntity>()
 
