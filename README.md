@@ -4,14 +4,12 @@ A completely offline, privacy-first Android app for tracking your monthly budget
 
 > Built with a security-first mindset: your financial data stays on your phone, always.
 
-\---
+---
 
 ## 📱 Screenshots
 
 <!-- Add your screenshots here -->
-
 <!-- Tip: put 3-4 side-by-side using HTML img tags -->
-
 <!--
 <p align="center">
   <img src="screenshots/dashboard.png" width="23%" />
@@ -19,66 +17,61 @@ A completely offline, privacy-first Android app for tracking your monthly budget
   <img src="screenshots/categories.png" width="23%" />
   <img src="screenshots/statement-import.png" width="23%" />
 </p>
+-->
 
-*Screenshots coming soon — see* [*Features*](#-features) *for full capability breakdown.*
+*Screenshots coming soon — see [Features](#-features) for full capability breakdown.*
 
-\---
+---
 
 ## ✨ Features
 
 ### 🏦 Bank Statement Parsing
-
-* Import your bank statement PDF/CSV and the app automatically extracts debits and credits
-* No manual entry needed for bank transactions
-* Parsing happens entirely on-device — your statement never touches a server
+- Import your bank statement PDF/CSV and the app automatically extracts debits and credits
+- No manual entry needed for bank transactions
+- Parsing happens entirely on-device — your statement never touches a server
 
 ### ✍️ Manual Cash Flow Entry
-
-* Log cash transactions manually (salary, rent, petty cash, etc.)
-* Full control over every entry — edit or delete anytime
+- Log cash transactions manually (salary, rent, petty cash, etc.)
+- Full control over every entry — edit or delete anytime
 
 ### 🗂️ Category Management
-
-* Pre-built categories: Food, Transport, Utilities, Entertainment, Healthcare, Shopping, and more
-* Create your own custom categories to match your lifestyle
-* Assign any transaction to any category in seconds
+- Pre-built categories: Food, Transport, Utilities, Entertainment, Healthcare, Shopping, and more
+- Create your own custom categories to match your lifestyle
+- Assign any transaction to any category in seconds
 
 ### 💱 Multi-Currency Support
+- Supports 4 currencies: **INR ₹ · USD $ · GBP £ · EUR €**
+- Switch your display currency from Settings at any time
 
-* Supports 4 currencies: **INR ₹ · USD $ · GBP £ · EUR €**
-* Switch your display currency from Settings at any time
+### 🔒 100% Offline & Private
+- Zero internet permissions — the app literally cannot send your data anywhere
+- No account required, no sign-up, no tracking
+- All data stored locally in an encrypted SQLite database on your device
 
-### 🔒 100% Offline \& Private
-
-* Zero internet permissions — the app literally cannot send your data anywhere
-* No account required, no sign-up, no tracking
-* All data stored locally in an encrypted SQLite database on your device
-
-\---
+---
 
 ## 🛠️ Tech Stack
 
-|Layer|Technology|
-|-|-|
-|Language|Kotlin|
-|UI|Jetpack Compose + Material 3|
-|Database|Room (SQLite)|
-|Architecture|MVVM|
-|PDF Parsing|PDFBox Android (`com.tom-roush:pdfbox-android` 2.0.27.0)|
-|OCR Fallback|Google ML Kit Text Recognition 16.0.0|
-|CSV Parsing|Kotlin standard library (no external dependency)|
-|Min SDK|Android 8.0 (API 26)|
+| Layer | Technology |
+|---|---|
+| Language | Kotlin |
+| UI | Jetpack Compose + Material 3 |
+| Database | Room (SQLite) |
+| Architecture | MVVM |
+| PDF Parsing | PDFBox Android (`com.tom-roush:pdfbox-android` 2.0.27.0) |
+| OCR Fallback | Google ML Kit Text Recognition 16.0.0 |
+| CSV Parsing | Kotlin standard library (no external dependency) |
+| Min SDK | Android 8.0 (API 26) |
 
-\---
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-
-* Android Studio Hedgehog or later
-* Android SDK 26+
-* Kotlin 1.9+
-* Compose BOM compatible with your Studio version
+- Android Studio Hedgehog or later
+- Android SDK 26+
+- Kotlin 1.9+
+- Compose BOM compatible with your Studio version
 
 ### Installation
 
@@ -102,7 +95,7 @@ Click the green Run button or press Shift + F10
 Build → Generate Signed Bundle / APK → APK → follow the prompts
 ```
 
-\---
+---
 
 ## 📁 Project Structure
 
@@ -125,38 +118,36 @@ my-budget/
 └── build.gradle
 ```
 
-\---
+---
 
-## 🔐 Privacy \& Security Design
+## 🔐 Privacy & Security Design
 
 This app was built with data privacy as a core constraint, not an afterthought:
 
-* **No INTERNET permission** declared in `AndroidManifest.xml` — verified by Android OS
-* **Local-only storage** using Room (SQLite) with no sync functionality
-* **No analytics, no crash reporting SDK, no ads** — zero third-party data collection
-* Bank statement parsing uses PDFBox Android for text-based PDFs, with Google ML Kit Text Recognition as an OCR fallback for scanned/image-based statements — all on-device, no cloud API calls
-* All user data is removed on app uninstall
+- **No INTERNET permission** declared in `AndroidManifest.xml` — verified by Android OS
+- **Local-only storage** using Room (SQLite) with no sync functionality
+- **No analytics, no crash reporting SDK, no ads** — zero third-party data collection
+- Bank statement parsing uses PDFBox Android for text-based PDFs, with Google ML Kit Text Recognition as an OCR fallback for scanned/image-based statements — all on-device, no cloud API calls
+- All user data is removed on app uninstall
 
 This makes My Budget safe for storing real financial data without worrying about breaches or leaks.
 
-\---
+---
 
 ## 🗺️ Roadmap
 
 ### ✅ Implemented
-
-* \[x] Fingerprint / PIN lock screen
-* \[x] Monthly budget goal setting with alerts
-* \[x] Charts and spending trends (monthly comparison)
-* \[x] Dark mode
-* \[x] Widget for home screen balance summary
+- [x] Fingerprint / PIN lock screen
+- [x] Monthly budget goal setting with alerts
+- [x] Charts and spending trends (monthly comparison)
+- [x] Dark mode
+- [x] Widget for home screen balance summary
 
 ### 🔧 Coming Soon
+- [ ] Export data as CSV or PDF report
+- [ ] Support for additional currencies beyond INR, USD, GBP, EUR
 
-* \[ ] Export data as CSV or PDF report
-* \[ ] Support for additional currencies beyond INR, USD, GBP, EUR
-
-\---
+---
 
 ## 🤝 Contributing
 
@@ -176,18 +167,17 @@ git push origin feature/your-feature-name
 
 Please open an issue first for major changes so we can discuss the approach.
 
-\---
+---
 
 ## 🐛 Reporting Bugs
 
 Found a bug? Open an issue with:
+- Your Android version
+- Steps to reproduce
+- What you expected vs what happened
+- Screenshot if relevant
 
-* Your Android version
-* Steps to reproduce
-* What you expected vs what happened
-* Screenshot if relevant
-
-\---
+---
 
 ## 📄 License
 
@@ -211,15 +201,13 @@ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 ```
 
-\---
+---
 
 ## 👤 Author
 
 **Kshitij**
+- GitHub: [@kshitij-cybersec](https://github.com/kshitij-cybersec)
 
-* GitHub: [@kshitij-cybersec](https://github.com/kshitij-cybersec)
+---
 
-\---
-
-<p align="center">Built with ❤️ in India \&nbsp;|\&nbsp; 100% offline \&nbsp;|\&nbsp; Your data stays yours</p>
-
+<p align="center">Built with ❤️ in India &nbsp;|&nbsp; 100% offline &nbsp;|&nbsp; Your data stays yours</p>
