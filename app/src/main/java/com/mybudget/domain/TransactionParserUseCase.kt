@@ -127,7 +127,8 @@ class TransactionParserUseCase {
                 val txAmt = first.amounts.first()
                 val bal = first.amounts.last()
                 val isInc = inferIncomeFromText(first.line, first.desc)
-                results.add(buildTx(first, txAmt, isInc, defaultCurrency))
+                val tx = buildTx(first, txAmt, isInc, defaultCurrency)
+                if (tx != null) results.add(tx)
                 prevBalance = bal
             } else {
                 prevBalance = first.amounts.last()
@@ -138,7 +139,8 @@ class TransactionParserUseCase {
                 val curBal = tl.amounts.last()
                 val delta = curBal - prevBalance
                 if (abs(delta) < 0.01) { prevBalance = curBal; continue }
-                results.add(buildTx(tl, abs(delta), delta > 0, defaultCurrency))
+                val tx = buildTx(tl, abs(delta), delta > 0, defaultCurrency)
+                if (tx != null) results.add(tx)
                 prevBalance = curBal
             }
             return ParsedStatementResult(results, openingBalance)
@@ -149,7 +151,8 @@ class TransactionParserUseCase {
             val curBal = tl.amounts.last()
             val delta = curBal - prevBalance
             if (abs(delta) < 0.01) { prevBalance = curBal; continue }
-            results.add(buildTx(tl, abs(delta), delta > 0, defaultCurrency))
+            val tx = buildTx(tl, abs(delta), delta > 0, defaultCurrency)
+            if (tx != null) results.add(tx)
             prevBalance = curBal
         }
         return ParsedStatementResult(results, openingBalance)
@@ -183,7 +186,9 @@ class TransactionParserUseCase {
 
     private fun buildTx(
         tl: TxLine, amount: Double, isIncome: Boolean, currency: String
-    ): TransactionEntity {
+    ): TransactionEntity? {
+        val timestamp = parseTimestamp(tl.dateStr) ?: return null
+
         val lower = tl.line.lowercase(Locale.getDefault())
         var category = CategoryCatalog.UNCATEGORIZED
         for ((kw, cat) in categoryDictionary) {
@@ -196,7 +201,7 @@ class TransactionParserUseCase {
         return TransactionEntity(
             amount = amount, isIncome = isIncome, categoryId = null,
             tag = category,
-            timestamp = parseTimestamp(tl.dateStr),
+            timestamp = timestamp,
             currency = currency,
             description = cleanDesc
         )
@@ -218,11 +223,10 @@ class TransactionParserUseCase {
         return "$beforeDec.$afterDec".toDoubleOrNull() ?: 0.0
     }
 
-    private fun parseTimestamp(dateStr: String): Long {
+    private fun parseTimestamp(dateStr: String): Long? {
         var cleaned = dateStr.replace(",", "").trim()
         if (!cleaned.matches(Regex(".*\\d{4}.*")) && !cleaned.matches(Regex(".*\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{2}.*"))) {
-            val year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-            cleaned = "$cleaned $year"
+            return null // Reject ambiguous dates or require year
         }
         
         val formats = listOf(
@@ -236,6 +240,6 @@ class TransactionParserUseCase {
                 p.parse(cleaned)?.let { return it.time }
             } catch (_: ParseException) {}
         }
-        return System.currentTimeMillis()
+        return null
     }
 }

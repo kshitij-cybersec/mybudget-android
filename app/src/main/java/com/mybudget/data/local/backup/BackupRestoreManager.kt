@@ -75,12 +75,23 @@ class BackupRestoreManager(
     suspend fun importData(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         try {
             val encryptedString = context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                InputStreamReader(inputStream).use { reader ->
-                    reader.readText()
+                val builder = java.lang.StringBuilder()
+                val buffer = ByteArray(8192)
+                var bytesRead: Int
+                var totalBytes = 0L
+                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                    totalBytes += bytesRead
+                    if (totalBytes > 10 * 1024 * 1024) return@withContext false // 10MB limit
+                    builder.append(String(buffer, 0, bytesRead, Charsets.UTF_8))
                 }
+                builder.toString()
             } ?: return@withContext false
 
+            if (encryptedString.isBlank()) return@withContext false
+
             val jsonString = decrypt(encryptedString)
+            if (jsonString.isBlank() || !jsonString.trimStart().startsWith("[")) return@withContext false
+
             val jsonArray = JSONArray(jsonString)
             val newTransactions = mutableListOf<TransactionEntity>()
 
