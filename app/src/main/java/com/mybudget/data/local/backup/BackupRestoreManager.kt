@@ -67,7 +67,6 @@ class BackupRestoreManager(
             }
             true
         } catch (e: Exception) {
-            e.printStackTrace()
             false
         }
     }
@@ -115,7 +114,6 @@ class BackupRestoreManager(
             }
             true
         } catch (e: Exception) {
-            e.printStackTrace()
             false
         }
     }

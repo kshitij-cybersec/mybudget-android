@@ -52,12 +52,12 @@ class ImageOcrExtractor(private val context: Context) {
                                 continuation.resumeWithException(e)
                             }
                     }
+                    bitmap.recycle()
                     stringBuilder.append(resultText).append("\n")
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
-            return "ERROR_OCR: ${e.message}"
+            return "ERROR_OCR: An error occurred during image processing."
         } finally {
             pdfRenderer?.close()
             fileDescriptor?.close()

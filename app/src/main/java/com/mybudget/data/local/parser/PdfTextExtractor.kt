@@ -31,8 +31,7 @@ class PdfTextExtractor(private val context: Context) {
                 extractedText = pdfStripper.getText(document)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
-            extractedText = "ERROR_PARSING: ${e.message}"
+            extractedText = "ERROR_PARSING: An error occurred during PDF parsing."
         } finally {
             document?.close()
             inputStream?.close()
