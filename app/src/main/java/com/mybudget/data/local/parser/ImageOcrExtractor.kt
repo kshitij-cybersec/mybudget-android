@@ -43,16 +43,19 @@ class ImageOcrExtractor(private val context: Context) {
 
                     // Execute ML Kit analysis
                     val image = InputImage.fromBitmap(bitmap, 0)
-                    val resultText = suspendCoroutine<String> { continuation ->
-                        recognizer.process(image)
-                            .addOnSuccessListener { result ->
-                                continuation.resume(result.text)
-                            }
-                            .addOnFailureListener { e ->
-                                continuation.resumeWithException(e)
-                            }
+                    val resultText = try {
+                        suspendCoroutine<String> { continuation ->
+                            recognizer.process(image)
+                                .addOnSuccessListener { result ->
+                                    continuation.resume(result.text)
+                                }
+                                .addOnFailureListener { e ->
+                                    continuation.resumeWithException(e)
+                                }
+                        }
+                    } finally {
+                        bitmap.recycle()
                     }
-                    bitmap.recycle()
                     stringBuilder.append(resultText).append("\n")
                 }
             }

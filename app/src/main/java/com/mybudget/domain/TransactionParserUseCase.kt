@@ -72,7 +72,7 @@ class TransactionParserUseCase {
     }
 
     fun parseStatement(rawText: String, defaultCurrency: String): ParsedStatementResult {
-        val allLines = rawText.split("\n", "\r").map { it.trim() }.filter { it.isNotEmpty() }
+        val allLines = rawText.split("\n", "\r").map { it.trim() }.filter { it.isNotEmpty() && it.length <= 500 }
 
         // 1. Stop at end-of-transactions markers
         val endIdx = allLines.indexOfFirst { line ->
@@ -192,7 +192,8 @@ class TransactionParserUseCase {
         val lower = tl.line.lowercase(Locale.getDefault())
         var category = CategoryCatalog.UNCATEGORIZED
         for ((kw, cat) in categoryDictionary) {
-            if (lower.contains(kw)) { category = cat; break }
+            val regex = Regex("""\b${Regex.escape(kw)}\b""")
+            if (regex.containsMatchIn(lower)) { category = cat; break }
         }
         val cleanDesc = tl.desc.replace(Regex("""\d{10,}"""), "")
             .replace(Regex("""\s{2,}"""), " ").trim()
