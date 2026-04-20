@@ -13,6 +13,7 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.security.SecureRandom
 import javax.crypto.Cipher
+import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
@@ -23,11 +24,17 @@ class BackupRestoreManager(
     private val secretKey = SecretKeySpec(com.mybudget.security.DatabaseKeyManager.getDatabasePassphrase(context), "AES")
 
     private fun encrypt(data: String): String {
+        val dataBytes = data.toByteArray(Charsets.UTF_8)
+        val hmacMac = Mac.getInstance("HmacSHA256")
+        hmacMac.init(secretKey)
+        val hmac = hmacMac.doFinal(dataBytes)
+        val payloadToEncrypt = hmac + dataBytes
+
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val iv = ByteArray(12)
         SecureRandom().nextBytes(iv)
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, GCMParameterSpec(128, iv))
-        val encrypted = cipher.doFinal(data.toByteArray(Charsets.UTF_8))
+        val encrypted = cipher.doFinal(payloadToEncrypt)
         val ivAndEncrypted = iv + encrypted
         return Base64.encodeToString(ivAndEncrypted, Base64.NO_WRAP)
     }
@@ -39,7 +46,31 @@ class BackupRestoreManager(
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(128, iv))
         val decrypted = cipher.doFinal(encrypted)
-        return String(decrypted, Charsets.UTF_8)
+
+        val possibleOldJsonString = String(decrypted, Charsets.UTF_8)
+        if (possibleOldJsonString.trimStart().startsWith("[")) {
+            try {
+                org.json.JSONArray(possibleOldJsonString)
+                return possibleOldJsonString
+            } catch (e: Exception) {
+                // Not valid JSON, proceed to new format
+            }
+        }
+
+        if (decrypted.size > 32) {
+            val hmac = decrypted.copyOfRange(0, 32)
+            val dataBytes = decrypted.copyOfRange(32, decrypted.size)
+            
+            val hmacMac = Mac.getInstance("HmacSHA256")
+            hmacMac.init(secretKey)
+            val computedHmac = hmacMac.doFinal(dataBytes)
+            if (!hmac.contentEquals(computedHmac)) {
+                throw SecurityException("HMAC verification failed")
+            }
+            return String(dataBytes, Charsets.UTF_8)
+        } else {
+            throw SecurityException("Payload too short")
+        }
     }
     suspend fun exportData(uri: Uri, transactions: List<TransactionEntity>): Boolean = withContext(Dispatchers.IO) {
         try {
