@@ -20,7 +20,7 @@ class BackupRestoreManager(
     private val context: Context,
     private val transactionDao: TransactionDao
 ) {
-    private val secretKey = SecretKeySpec("MyBudgetV1SecretKeyForJSONBckp!!".toByteArray(Charsets.UTF_8), "AES")
+    private val secretKey = SecretKeySpec(com.mybudget.security.DatabaseKeyManager.getDatabasePassphrase(context), "AES")
 
     private fun encrypt(data: String): String {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")

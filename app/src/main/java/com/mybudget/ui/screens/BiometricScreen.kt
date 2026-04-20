@@ -127,9 +127,11 @@ fun BiometricScreen(activity: FragmentActivity, onUnlocked: () -> Unit) {
 
         if (!biometricAvailable) {
             Spacer(modifier = Modifier.height(20.dp))
-            Button(onClick = onUnlocked) {
-                Text("Continue")
-            }
+            Text(
+                text = "Secure screen lock is required.",
+                color = MaterialTheme.colorScheme.error,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
