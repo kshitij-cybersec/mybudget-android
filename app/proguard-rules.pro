@@ -19,3 +19,15 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Suppress warnings for missing optional dependencies required by PDFBox
+-dontwarn com.gemalto.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.apache.pdfbox.**
+-dontwarn com.tom_roush.pdfbox.**
+
+# Keep data entities for Database/Room
+-keep class com.mybudget.data.local.entity.** { *; }
+
+# Keep domain models and use cases
+-keep class com.mybudget.domain.** { *; }
