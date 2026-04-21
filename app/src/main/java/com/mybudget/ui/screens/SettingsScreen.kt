@@ -47,7 +47,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mybudget.data.local.prefs.SettingsManager
 import com.mybudget.security.BiometricUtils
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,8 +81,10 @@ fun SettingsScreen(
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) {
             coroutineScope.launch {
-                val transactions = transactionDao.getAllTransactionsSync()
-                val success = backupRestoreManager.exportData(uri, transactions)
+                val success = withContext(Dispatchers.IO) {
+                    val transactions = transactionDao.getAllTransactionsSync()
+                    backupRestoreManager.exportData(uri, transactions)
+                }
                 val msg = if (success) "Backup saved successfully!" else "Failed to save backup."
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             }

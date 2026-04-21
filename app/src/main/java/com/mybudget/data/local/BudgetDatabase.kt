@@ -12,7 +12,7 @@ import com.mybudget.data.local.entity.CategoryEntity
 import com.mybudget.data.local.entity.TransactionEntity
 import com.mybudget.domain.CategoryCatalog
 import com.mybudget.security.DatabaseKeyManager
-import net.sqlcipher.database.SupportFactory
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Database(entities = [TransactionEntity::class, CategoryEntity::class], version = 2, exportSchema = true)
 abstract class BudgetDatabase : RoomDatabase() {
@@ -53,7 +53,7 @@ abstract class BudgetDatabase : RoomDatabase() {
         fun getDatabase(context: Context): BudgetDatabase {
             return INSTANCE ?: synchronized(this) {
                 val passphrase = DatabaseKeyManager.getDatabasePassphrase(context)
-                val factory = SupportFactory(passphrase)
+                val factory = SupportOpenHelperFactory(passphrase)
 
                 val instance = Room.databaseBuilder(
                     context.applicationContext,

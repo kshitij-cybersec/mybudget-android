@@ -20,6 +20,27 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE timestamp BETWEEN :startDate AND :endDate ORDER BY timestamp DESC")
     fun getTransactionsBetween(startDate: Long, endDate: Long): Flow<List<TransactionEntity>>
 
+    @Query(
+        """
+        SELECT EXISTS(
+            SELECT 1 FROM transactions
+            WHERE timestamp = :timestamp
+              AND amount = :amount
+              AND isIncome = :isIncome
+              AND currency = :currency
+              AND description = :description
+            LIMIT 1
+        )
+        """
+    )
+    fun transactionExists(
+        timestamp: Long,
+        amount: Double,
+        isIncome: Boolean,
+        currency: String,
+        description: String
+    ): Boolean
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertTransaction(transaction: TransactionEntity): Long
 

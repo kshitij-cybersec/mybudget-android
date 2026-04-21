@@ -91,9 +91,11 @@ class BackupRestoreManager(
             val jsonString = jsonArray.toString(4)
             val encryptedData = encrypt(jsonString)
 
-            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+            val outputStream = context.contentResolver.openOutputStream(uri) ?: return@withContext false
+            outputStream.use {
                 OutputStreamWriter(outputStream).use { writer ->
                     writer.write(encryptedData)
+                    writer.flush()
                 }
             }
             true
@@ -139,9 +141,18 @@ class BackupRestoreManager(
                 )
                 newTransactions.add(tx)
             }
-            if (newTransactions.isNotEmpty()) {
-                // Bulk insert safely, relying strictly on the DAO replacing conflicts if any
-                transactionDao.insertTransactions(newTransactions)
+            val uniqueTransactions = newTransactions.filterNot { transaction ->
+                transactionDao.transactionExists(
+                    timestamp = transaction.timestamp,
+                    amount = transaction.amount,
+                    isIncome = transaction.isIncome,
+                    currency = transaction.currency,
+                    description = transaction.description
+                )
+            }
+
+            if (uniqueTransactions.isNotEmpty()) {
+                transactionDao.insertTransactions(uniqueTransactions)
             }
             true
         } catch (e: Exception) {

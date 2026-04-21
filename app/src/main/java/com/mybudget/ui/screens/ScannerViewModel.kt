@@ -119,10 +119,26 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch(Dispatchers.IO) {
             val list = _draftTransactions.value
             if (list.isNotEmpty()) {
-                transactionDao.insertTransactions(list.map { it.transaction })
+                val uniqueTransactions = list.map { it.transaction }.filterNot { transaction ->
+                    transactionDao.transactionExists(
+                        timestamp = transaction.timestamp,
+                        amount = transaction.amount,
+                        isIncome = transaction.isIncome,
+                        currency = transaction.currency,
+                        description = transaction.description
+                    )
+                }
+                val skippedCount = list.size - uniqueTransactions.size
+                if (uniqueTransactions.isNotEmpty()) {
+                    transactionDao.insertTransactions(uniqueTransactions)
+                }
                 _detectedOpeningBalance.value?.toDoubleOrNull()?.let { settingsManager.saveOpeningBalance(it) }
                 _draftTransactions.value = emptyList()
-                _scanMessage.value = "Approved and saved!"
+                _scanMessage.value = when {
+                    uniqueTransactions.isEmpty() -> "All matched transactions were already present. Nothing new was added."
+                    skippedCount > 0 -> "Saved ${uniqueTransactions.size} new transaction(s). Skipped $skippedCount duplicate(s)."
+                    else -> "Approved and saved!"
+                }
             }
         }
     }

@@ -29,5 +29,12 @@
 # Keep data entities for Database/Room
 -keep class com.mybudget.data.local.entity.** { *; }
 
+# Room creates generated *_Impl classes via reflection in release builds.
+# Keep those implementations and their constructors so minification doesn't
+# remove the no-arg constructor Room expects.
+-keep class * extends androidx.room.RoomDatabase { *; }
+-keep class com.mybudget.data.local.**_Impl { <init>(...); *; }
+-keep class * extends androidx.room.RoomDatabase_Impl { *; }
+
 # Keep domain models and use cases
 -keep class com.mybudget.domain.** { *; }
