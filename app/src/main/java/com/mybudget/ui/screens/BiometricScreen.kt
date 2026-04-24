@@ -19,6 +19,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +39,9 @@ fun BiometricScreen(activity: FragmentActivity, onUnlocked: () -> Unit) {
         BiometricUtils.isAuthenticationAvailable(activity)
     }
 
+    val failedAttempts = remember { mutableIntStateOf(0) }
+    val lockoutUntil = remember { mutableLongStateOf(0L) }
+
     val promptInfo = remember {
         BiometricPrompt.PromptInfo.Builder()
             .setTitle("Unlock Budget Tracker")
@@ -45,8 +50,10 @@ fun BiometricScreen(activity: FragmentActivity, onUnlocked: () -> Unit) {
             .build()
     }
 
+    val biometricPromptRef = remember { arrayOfNulls<BiometricPrompt>(1) }
+
     val biometricPrompt = remember {
-        BiometricPrompt(
+        val prompt = BiometricPrompt(
             activity,
             executor,
             object : BiometricPrompt.AuthenticationCallback() {
@@ -61,19 +68,36 @@ fun BiometricScreen(activity: FragmentActivity, onUnlocked: () -> Unit) {
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
+                    failedAttempts.intValue = 0
+                    lockoutUntil.longValue = 0L
                     onUnlocked()
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    Toast.makeText(activity, "Authentication Failed", Toast.LENGTH_SHORT).show()
+                    failedAttempts.intValue += 1
+                    if (failedAttempts.intValue >= 3) {
+                        lockoutUntil.longValue = System.currentTimeMillis() + 30000L // 30s lockout
+                        failedAttempts.intValue = 0
+                        biometricPromptRef[0]?.cancelAuthentication()
+                        Toast.makeText(
+                            activity,
+                            "Too many attempts. Please wait 30 seconds.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        Toast.makeText(activity, "Authentication Failed", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         )
+        biometricPromptRef[0] = prompt
+        prompt
     }
 
     LaunchedEffect(biometricAvailable) {
-        if (biometricAvailable) {
+        val currentTime = System.currentTimeMillis()
+        if (biometricAvailable && currentTime >= lockoutUntil.longValue) {
             biometricPrompt.authenticate(promptInfo)
         }
     }
@@ -87,7 +111,15 @@ fun BiometricScreen(activity: FragmentActivity, onUnlocked: () -> Unit) {
     ) {
         IconButton(
             onClick = {
-                if (biometricAvailable) {
+                val currentTime = System.currentTimeMillis()
+                if (currentTime < lockoutUntil.longValue) {
+                    val remainingSeconds = (lockoutUntil.longValue - currentTime) / 1000
+                    Toast.makeText(
+                        activity,
+                        "Locked out. Try again in $remainingSeconds seconds.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else if (biometricAvailable) {
                     biometricPrompt.authenticate(promptInfo)
                 }
             },
