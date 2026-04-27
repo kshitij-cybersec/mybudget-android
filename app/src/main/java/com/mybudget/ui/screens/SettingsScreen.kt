@@ -321,7 +321,7 @@ fun SettingsScreen(
                     androidx.compose.material3.Button(
                         onClick = {
                             val parsed = openingBalanceInput.toDoubleOrNull()
-                            if (parsed == null || parsed < 0) {
+                            if (parsed == null || parsed < 0 || parsed.isNaN() || parsed.isInfinite()) {
                                 Toast.makeText(context, "Enter a valid positive number", Toast.LENGTH_SHORT).show()
                             } else {
                                 coroutineScope.launch { settingsManager.saveOpeningBalance(parsed) }
