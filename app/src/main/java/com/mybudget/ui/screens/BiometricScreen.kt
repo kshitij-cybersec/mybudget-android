@@ -39,8 +39,8 @@ fun BiometricScreen(activity: FragmentActivity, onUnlocked: () -> Unit) {
         BiometricUtils.isAuthenticationAvailable(activity)
     }
 
-    val failedAttempts = remember { mutableIntStateOf(0) }
-    val lockoutUntil = remember { mutableLongStateOf(0L) }
+    val failedAttempts = remember { mutableIntStateOf(BiometricUtils.getFailedAttempts(activity)) }
+    val lockoutUntil = remember { mutableLongStateOf(BiometricUtils.getLockoutUntil(activity)) }
 
     val promptInfo = remember {
         BiometricPrompt.PromptInfo.Builder()
@@ -68,6 +68,7 @@ fun BiometricScreen(activity: FragmentActivity, onUnlocked: () -> Unit) {
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
+                    BiometricUtils.resetFailedAttempts(activity)
                     failedAttempts.intValue = 0
                     lockoutUntil.longValue = 0L
                     onUnlocked()
@@ -75,10 +76,16 @@ fun BiometricScreen(activity: FragmentActivity, onUnlocked: () -> Unit) {
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    failedAttempts.intValue += 1
-                    if (failedAttempts.intValue >= 3) {
-                        lockoutUntil.longValue = System.currentTimeMillis() + 30000L // 30s lockout
+                    val newAttempts = BiometricUtils.recordFailedAttempt(activity)
+                    failedAttempts.intValue = newAttempts
+                    
+                    if (newAttempts >= 3) {
+                        val lockoutTime = System.currentTimeMillis() + 30000L // 30s lockout
+                        BiometricUtils.setLockoutUntil(activity, lockoutTime)
+                        lockoutUntil.longValue = lockoutTime
+                        BiometricUtils.clearFailedAttempts(activity) // Reset only the count
                         failedAttempts.intValue = 0
+                        
                         biometricPromptRef[0]?.cancelAuthentication()
                         Toast.makeText(
                             activity,
