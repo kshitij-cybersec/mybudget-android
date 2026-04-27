@@ -54,7 +54,7 @@ class TransactionParserUseCase {
         val amounts: List<Double>, val desc: String
     )
 
-    private val amountRegex = Regex("""(?<!\d)(\d{1,3}(?:[.,\s]\d{3})*[.,]\d{2})(?!\d)""")
+    private val amountRegex = Regex("""(?<!\d)(\d{1,3}(?:[.,\s]\d{3}){0,10}[.,]\d{2})(?!\d)""")
 
     private val dateRegex = Regex(
         """(\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}""" +
