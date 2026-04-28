@@ -142,9 +142,9 @@ This makes My Budget safe for storing real financial data without worrying about
 - [x] Charts and spending trends (monthly comparison)
 - [x] Dark mode
 - [x] Widget for home screen balance summary
+- [x] Export data as CSV or PDF report
 
 ### 🔧 Coming Soon
-- [ ] Export data as CSV or PDF report
 - [ ] Support for additional currencies beyond INR, USD, GBP, EUR
 
 ---
