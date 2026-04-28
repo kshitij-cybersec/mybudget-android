@@ -101,6 +101,53 @@ fun SettingsScreen(
         }
     }
 
+    var showExportDialog by remember { mutableStateOf(false) }
+    var exportFormat by remember { mutableStateOf("CSV") }
+    var exportChartType by remember { mutableStateOf("Pie Chart") }
+    var exportTimeline by remember { mutableStateOf("Last 30 Days") }
+
+    val csvExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+        if (uri != null) {
+            coroutineScope.launch {
+                val transactions = withContext(Dispatchers.IO) {
+                    val timelineEnd = System.currentTimeMillis()
+                    val timelineStart = when(exportTimeline) {
+                        "Last 7 Days" -> timelineEnd - 7L * 24 * 60 * 60 * 1000
+                        "Last 30 Days" -> timelineEnd - 30L * 24 * 60 * 60 * 1000
+                        "This Year" -> timelineEnd - 365L * 24 * 60 * 60 * 1000
+                        else -> 0L
+                    }
+                    val allTx = transactionDao.getAllTransactionsSync()
+                    if (exportTimeline == "All Time") allTx else allTx.filter { it.timestamp in timelineStart..timelineEnd }
+                }
+                val success = com.mybudget.util.ReportExporter.exportAsCsv(context, uri, transactions)
+                Toast.makeText(context, if(success) "Report Exported" else "Export Failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val pdfExportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
+        if (uri != null) {
+            val chartType = exportChartType
+            val timelineStr = exportTimeline
+            coroutineScope.launch {
+                val transactions = withContext(Dispatchers.IO) {
+                    val timelineEnd = System.currentTimeMillis()
+                    val timelineStart = when(timelineStr) {
+                        "Last 7 Days" -> timelineEnd - 7L * 24 * 60 * 60 * 1000
+                        "Last 30 Days" -> timelineEnd - 30L * 24 * 60 * 60 * 1000
+                        "This Year" -> timelineEnd - 365L * 24 * 60 * 60 * 1000
+                        else -> 0L
+                    }
+                    val allTx = transactionDao.getAllTransactionsSync()
+                    if (timelineStr == "All Time") allTx else allTx.filter { it.timestamp in timelineStart..timelineEnd }
+                }
+                val success = com.mybudget.util.ReportExporter.exportAsPdf(context, uri, transactions, chartType, timelineStr)
+                Toast.makeText(context, if(success) "Report Exported" else "Export Failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     if (showBudgetCycleWarning != null) {
         val targetCycle = showBudgetCycleWarning!!
         androidx.compose.material3.AlertDialog(
@@ -118,6 +165,66 @@ fun SettingsScreen(
             },
             dismissButton = {
                 androidx.compose.material3.TextButton(onClick = { showBudgetCycleWarning = null }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showExportDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showExportDialog = false },
+            title = { Text("Export Report") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Format", style = MaterialTheme.typography.labelLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        listOf("CSV", "PDF").forEach { format ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(selected = exportFormat == format, onClick = { exportFormat = format })
+                                Text(format)
+                            }
+                        }
+                    }
+                    if (exportFormat == "PDF") {
+                        Text("Chart Type", style = MaterialTheme.typography.labelLarge)
+                        var expandedChart by remember { mutableStateOf(false) }
+                        Box {
+                            OutlinedButton(onClick = { expandedChart = true }, modifier = Modifier.fillMaxWidth()) {
+                                Text(exportChartType)
+                            }
+                            DropdownMenu(expanded = expandedChart, onDismissRequest = { expandedChart = false }) {
+                                listOf("Pie Chart", "Bar Chart", "None").forEach { chart ->
+                                    DropdownMenuItem(text = { Text(chart) }, onClick = { exportChartType = chart; expandedChart = false })
+                                }
+                            }
+                        }
+                    }
+                    Text("Timeline", style = MaterialTheme.typography.labelLarge)
+                    var expandedTimeline by remember { mutableStateOf(false) }
+                    Box {
+                        OutlinedButton(onClick = { expandedTimeline = true }, modifier = Modifier.fillMaxWidth()) {
+                            Text(exportTimeline)
+                        }
+                        DropdownMenu(expanded = expandedTimeline, onDismissRequest = { expandedTimeline = false }) {
+                            listOf("Last 7 Days", "Last 30 Days", "This Year", "All Time").forEach { t ->
+                                DropdownMenuItem(text = { Text(t) }, onClick = { exportTimeline = t; expandedTimeline = false })
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    showExportDialog = false
+                    val fileName = "Report_${System.currentTimeMillis()}"
+                    if (exportFormat == "CSV") {
+                        csvExportLauncher.launch("$fileName.csv")
+                    } else {
+                        pdfExportLauncher.launch("$fileName.pdf")
+                    }
+                }) { Text("Export") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showExportDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -364,6 +471,28 @@ fun SettingsScreen(
                         Icon(Icons.Default.Restore, contentDescription = "Restore", modifier = Modifier.padding(end = 6.dp))
                         Text("Restore DB")
                     }
+                }
+            }
+
+            HorizontalDivider()
+
+            // Export Reports
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Export Reports",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "Generate and export transaction reports as CSV or PDF files. You can also include charts for specific timelines.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedButton(
+                    onClick = { showExportDialog = true },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                ) {
+                    Text("Generate Report")
                 }
             }
             // Add a little padding at the bottom for scrolling.
