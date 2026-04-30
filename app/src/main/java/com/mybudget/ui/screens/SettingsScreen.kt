@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mybudget.data.local.prefs.SettingsManager
+import com.mybudget.domain.CurrencyConfig
 import com.mybudget.security.BiometricUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -69,9 +70,7 @@ fun SettingsScreen(
     val biometricAvailable = remember(context) {
         BiometricUtils.isAuthenticationAvailable(context)
     }
-    val currencies = remember {
-        listOf("USD ($)", "INR (Rs)", "EUR (EUR)", "GBP (GBP)")
-    }
+    val currencies = remember { CurrencyConfig.labels }
     val budgetCyclesList = remember { listOf("Daily", "Weekly", "Monthly") }
     var showBudgetCycleWarning by remember { mutableStateOf<String?>(null) }
 
@@ -375,8 +374,7 @@ fun SettingsScreen(
                         onClick = { expanded = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        val currentText = currencies.find { it.startsWith(preferredCurrency) } ?: currencies.first()
-                        Text(currentText)
+                        Text(CurrencyConfig.labelFor(preferredCurrency))
                     }
                     DropdownMenu(
                         expanded = expanded,

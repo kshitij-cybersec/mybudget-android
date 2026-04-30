@@ -57,6 +57,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mybudget.data.local.entity.TransactionEntity
 import com.mybudget.data.local.prefs.SettingsManager
+import com.mybudget.domain.CurrencyConfig
 import com.mybudget.domain.CategoryCatalog
 import com.mybudget.domain.CategoryType
 import java.text.SimpleDateFormat
@@ -82,12 +83,7 @@ fun TransactionListScreen(
     val categories by viewModel.categories.collectAsState()
     val preferredCurrency by settingsManager.preferredCurrencyFlow.collectAsState(initial = "USD")
     val currencySymbol = remember(preferredCurrency) {
-        when (preferredCurrency) {
-            "INR" -> "Rs "
-            "EUR" -> "EUR "
-            "GBP" -> "GBP "
-            else -> "$"
-        }
+        CurrencyConfig.symbolFor(preferredCurrency)
     }
 
     var pendingDelete by remember { mutableStateOf<TransactionEntity?>(null) }

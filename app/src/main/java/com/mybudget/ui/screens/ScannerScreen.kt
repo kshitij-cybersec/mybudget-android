@@ -51,6 +51,7 @@ import com.mybudget.domain.CategoryCatalog
 import com.mybudget.domain.CategoryType
 import com.mybudget.data.local.entity.TransactionEntity
 import com.mybudget.data.local.prefs.SettingsManager
+import com.mybudget.domain.CurrencyConfig
 import com.mybudget.ui.components.BasicCategoryDropdown
 import com.mybudget.ui.components.CategoryPickerField
 import java.text.SimpleDateFormat
@@ -92,12 +93,7 @@ fun ScannerScreen(
 
     val preferredCurrency by settingsManager.preferredCurrencyFlow.collectAsState(initial = "USD")
     val currencySymbol = remember(preferredCurrency) {
-        when (preferredCurrency) {
-            "INR" -> "Rs "
-            "EUR" -> "EUR "
-            "GBP" -> "GBP "
-            else -> "$"
-        }
+        CurrencyConfig.symbolFor(preferredCurrency)
     }
     val draftForNewCategory = remember(draftTransactions, createCategoryForDraftId) {
         draftTransactions.firstOrNull { it.localId == createCategoryForDraftId }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,12 +32,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mybudget.data.local.prefs.SettingsManager
+import com.mybudget.domain.CurrencyConfig
 import kotlinx.coroutines.launch
 
 @Composable
 fun OnboardingScreen(settingsManager: SettingsManager, onComplete: () -> Unit) {
     val coroutineScope = rememberCoroutineScope()
-    val currencies = listOf("USD ($)", "INR (Rs)", "EUR (EUR)", "GBP (GBP)")
+    val currencies = CurrencyConfig.labels
     var selectedCurrency by remember { mutableStateOf(currencies.first()) }
 
     Column(
@@ -64,25 +66,29 @@ fun OnboardingScreen(settingsManager: SettingsManager, onComplete: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(48.dp))
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            items(currencies.size) { index ->
+                val currency = currencies[index]
+                val isSelected = currency == selectedCurrency
+                val backgroundColor =
+                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    else MaterialTheme.colorScheme.surfaceVariant
 
-        currencies.forEach { currency ->
-            val isSelected = currency == selectedCurrency
-            val backgroundColor =
-                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                else MaterialTheme.colorScheme.surfaceVariant
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(backgroundColor)
-                    .clickable { selectedCurrency = currency }
-                    .padding(20.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(backgroundColor)
+                        .clickable { selectedCurrency = currency }
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
                     Text(
                         text = currency,
                         fontSize = 18.sp,
@@ -94,7 +100,7 @@ fun OnboardingScreen(settingsManager: SettingsManager, onComplete: () -> Unit) {
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {

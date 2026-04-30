@@ -79,6 +79,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mybudget.data.local.entity.CategoryEntity
 import com.mybudget.data.local.entity.TransactionEntity
 import com.mybudget.data.local.prefs.SettingsManager
+import com.mybudget.domain.CurrencyConfig
 import com.mybudget.domain.CategoryCatalog
 import com.mybudget.domain.CategoryType
 import java.text.SimpleDateFormat
@@ -119,12 +120,7 @@ fun DashboardScreen(
 
     val preferredCurrency by settingsManager.preferredCurrencyFlow.collectAsState(initial = "USD")
     val currencySymbol = remember(preferredCurrency) {
-        when (preferredCurrency) {
-            "INR" -> "Rs "
-            "EUR" -> "EUR "
-            "GBP" -> "GBP "
-            else -> "$"
-        }
+        CurrencyConfig.symbolFor(preferredCurrency)
     }
 
     var showSafeToSpendDialog by remember { mutableStateOf(false) }
