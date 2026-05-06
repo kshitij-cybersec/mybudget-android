@@ -32,6 +32,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val budgetCycle: StateFlow<String> = settingsManager.budgetCycleFlow
         .stateIn(viewModelScope, SharingStarted.Lazily, "Monthly")
 
+    private data class DashboardData(
+        val transactions: List<TransactionEntity>,
+        val openingBalance: Double,
+        val baseSafeToSpend: Double,
+        val cycle: String
+    )
+
     init {
         viewModelScope.launch {
             combine(
@@ -40,22 +47,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 settingsManager.baseSafeToSpendFlow,
                 settingsManager.budgetCycleFlow
             ) { list, openingBalance, baseSafeToSpend, cycle ->
-                // Custom data class not strictly needed, just return a list or Array
-                listOf(list, openingBalance, baseSafeToSpend, cycle)
-            }.collect { values ->
-                @Suppress("UNCHECKED_CAST")
-                val list = values[0] as List<TransactionEntity>
-                val openingBalance = values[1] as Double
-                val baseSafeToSpend = values[2] as Double
-                val cycle = values[3] as String
-
-                var net = openingBalance
-                for (tx in list) {
+                DashboardData(list, openingBalance, baseSafeToSpend, cycle)
+            }.collect { data ->
+                var net = data.openingBalance
+                for (tx in data.transactions) {
                     if (tx.isIncome) net += tx.amount else net -= tx.amount
                 }
                 (totalBalance as MutableStateFlow).value = net
 
-                val safeAmount = safeToSpendUseCase.calculateSafeToSpend(list, baseSafeToSpend, cycle)
+                val safeAmount = safeToSpendUseCase.calculateSafeToSpend(data.transactions, data.baseSafeToSpend, data.cycle)
                 (safeToSpend as MutableStateFlow).value = safeAmount
             }
         }
